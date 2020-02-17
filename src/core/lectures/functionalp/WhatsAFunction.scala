@@ -31,6 +31,8 @@ object WhatsAFunction extends App {
     }
   }
 
+  val superAdder1 = (x: Int) => (y: Int) => x + y
+
   val adder3 = superAdder(3)
   println(adder3(4)) // 7
   println(superAdder(3)(4)) // curried function
