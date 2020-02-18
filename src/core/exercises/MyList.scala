@@ -16,8 +16,14 @@ abstract class MyList[+A] {
 
   def filter(predicate: A => Boolean): MyList[A]
 
-
   def ++[B >: A](list: MyList[B]): MyList[B]
+
+  def foreach(f: A => Unit): Unit
+
+  //hofs
+  def sort(compare: (A, A) => Int): MyList[A]
+  def zipWith[B, C](list: MyList[B], zip: (A, B) => C): MyList[C]
+  def fold[B](start: B)(operator: (B, A) => B): B
 }
 
 object Empty extends MyList[Nothing] {
@@ -38,9 +44,20 @@ object Empty extends MyList[Nothing] {
   override def filter(predicate: Nothing => Boolean): MyList[Nothing] = Empty
 
   override def ++[B >: Nothing](list: MyList[B]): MyList[B] = list
+
+  //hofs
+  override def foreach(f: Nothing => Unit): Unit = ()
+
+  override def sort(compare: (Nothing, Nothing) => Int): MyList[Nothing] = Empty
+
+  override def zipWith[B, C](list: MyList[B], zip: (Nothing, B) => C): MyList[C] =
+    if(!list.isEmpty) throw new RuntimeException("Lists do not have same length")
+    else Empty
+
+  override def fold[B](start: B)(operator: (B, Nothing) => B): B = start
 }
 
-class Cons[+A](h: A, t: MyList[A]) extends MyList[A] {
+case class Cons[+A](h: A, t: MyList[A]) extends MyList[A] {
   def head: A = h
 
   def tail: MyList[A] = t
@@ -61,6 +78,30 @@ class Cons[+A](h: A, t: MyList[A]) extends MyList[A] {
 
   def ++[B >: A](list: MyList[B]): MyList[B] = new Cons(h, t ++ list)
 
+  override def foreach(f: A => Unit): Unit = {
+    f(head)
+    tail.foreach(f)
+  }
+
+  //  override def sort(compare: (A, A) => Int): MyList[A] = {
+  //    def insert(x: A, sortedList: MyList[A]): MyList[A] =
+  //      if (sortedList.isEmpty) new Cons(x, Empty)
+  //      else if (compare(x, sortedList.head) <= 0) new Cons(x, sortedList)
+  //      else Cons(sortedList, insert(x, sortedList.tail))
+  //
+  //    val sorted = t.sort(compare)
+  //    insert(h, sorted)
+
+  override def sort(compare: (A, A) => Int): MyList[A] = ???
+
+  override def zipWith[B, C](list: MyList[B], zip: (A, B) => C): MyList[C] =
+    if (list.isEmpty) throw new RuntimeException("Lists do not have same length")
+    else Cons(zip(h, list.head), t.zipWith(list.tail, zip))
+
+  override def fold[B](start: B)(operator: (B, A) => B): B = {
+    val newStart = operator(start, h)
+    t.fold(newStart)(operator)
+  }
 }
 
 trait MyPredicate[-T] { // T => Boolean
